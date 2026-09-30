@@ -6,14 +6,61 @@ system tray (Windows/Linux) et menu bar (macOS).
 
 ## Lancement
 
+**macOS / Linux :**
 ```bash
 ./start.sh
 ```
 
-Ce script installe les dépendances npm (si nécessaire) puis démarre l'application
-(`npm start`, qui exécute `electron .`).
+**Windows :**
+```bat
+start.bat
+```
+(double-clic possible dans l'explorateur de fichiers, ou depuis une invite de
+commandes / PowerShell)
 
-Prérequis : Node.js et npm installés.
+Ces scripts installent les dépendances npm (si nécessaire) puis démarrent
+l'application (`npm start`, qui exécute `electron .`).
+
+Prérequis : Node.js et npm installés (voir ci-dessous).
+
+## Installer Node.js
+
+L'application nécessite **Node.js** (qui inclut npm). Version recommandée :
+LTS (18.x ou plus récent).
+
+**macOS :**
+```bash
+brew install node
+```
+(ou télécharger l'installeur depuis [nodejs.org](https://nodejs.org/))
+
+**Windows :**
+- Télécharger l'installeur **LTS** depuis [nodejs.org](https://nodejs.org/) et
+  l'exécuter (inclut Node.js, npm, et l'ajout au `PATH`).
+- Alternative via [winget](https://learn.microsoft.com/windows/package-manager/winget/) :
+  ```powershell
+  winget install OpenJS.NodeJS.LTS
+  ```
+
+**Linux :**
+- Via le gestionnaire de paquets de la distribution (peut fournir une version
+  ancienne), par exemple :
+  ```bash
+  sudo apt install nodejs npm        # Debian/Ubuntu
+  sudo dnf install nodejs npm        # Fedora
+  ```
+- Ou via [nvm](https://github.com/nvm-sh/nvm) (recommandé pour avoir la
+  dernière version LTS) :
+  ```bash
+  curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+  nvm install --lts
+  ```
+
+Vérifier l'installation :
+```bash
+node --version
+npm --version
+```
 
 ## Fonctionnalités
 
@@ -53,6 +100,7 @@ Prérequis : Node.js et npm installés.
 pomodoro-app/
   package.json
   start.sh
+  start.bat
   src/
     main/          # process principal Electron (fenêtre, tray, timer, IPC)
     preload/        # pont sécurisé main <-> renderer
