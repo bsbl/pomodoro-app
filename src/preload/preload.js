@@ -15,6 +15,8 @@ contextBridge.exposeInMainWorld('pomodoroAPI', {
   resumeCurrent: () => ipcRenderer.send('resume-current'),
   snooze: () => ipcRenderer.send('snooze'),
   stopAlert: () => ipcRenderer.send('stop-alert'),
+  manualBreak: () => ipcRenderer.send('manual-break'),
+  dismissPostStop: () => ipcRenderer.send('dismiss-post-stop'),
   getHistory: () => ipcRenderer.invoke('get-history'),
   getAutoLaunch: () => ipcRenderer.invoke('get-auto-launch'),
   setAutoLaunch: (enabled) => ipcRenderer.send('set-auto-launch', enabled),

@@ -1,6 +1,7 @@
 'use strict';
 
 const ALERT_AUTO_BREAK_SECONDS = 30; // must match main/timer.js ALERT_TIMEOUT_SECONDS
+const POST_STOP_TIMEOUT_SECONDS = 30; // must match main/main.js POST_STOP_TIMEOUT_SECONDS
 
 const timeDisplay = document.getElementById('time-display');
 const stateLabel = document.getElementById('state-label');
@@ -22,7 +23,14 @@ const overlayCountdown = document.getElementById('overlay-countdown');
 const btnSnooze = document.getElementById('btn-snooze');
 const btnStopAlert = document.getElementById('btn-stop-alert');
 
+const postStopOverlay = document.getElementById('post-stop-overlay');
+const postStopCountdown = document.getElementById('post-stop-countdown');
+const btnPostStopBreak = document.getElementById('btn-post-stop-break');
+const btnPostStopNewTask = document.getElementById('btn-post-stop-new-task');
+const btnPostStopClose = document.getElementById('btn-post-stop-close');
+
 let alertCountdownInterval = null;
+let postStopCountdownInterval = null;
 
 function formatTime(totalSeconds) {
   const m = Math.floor(totalSeconds / 60).toString().padStart(2, '0');
@@ -70,6 +78,9 @@ function applySnapshot(snapshot) {
   if (snapshot.state !== 'alerting') {
     hideAlertOverlay();
   }
+  if (snapshot.state !== 'idle') {
+    hidePostStopOverlay();
+  }
 }
 
 function showAlertOverlay(snapshot) {
@@ -96,13 +107,39 @@ function hideAlertOverlay() {
   alertCountdownInterval = null;
 }
 
+function showPostStopOverlay() {
+  postStopOverlay.classList.remove('hidden');
+
+  let remaining = POST_STOP_TIMEOUT_SECONDS;
+  postStopCountdown.textContent = `Break starts automatically in ${remaining}s if no action.`;
+  clearInterval(postStopCountdownInterval);
+  postStopCountdownInterval = setInterval(() => {
+    remaining -= 1;
+    if (remaining <= 0) {
+      clearInterval(postStopCountdownInterval);
+      postStopCountdown.textContent = 'Starting break...';
+      return;
+    }
+    postStopCountdown.textContent = `Break starts automatically in ${remaining}s if no action.`;
+  }, 1000);
+}
+
+function hidePostStopOverlay() {
+  postStopOverlay.classList.add('hidden');
+  clearInterval(postStopCountdownInterval);
+  postStopCountdownInterval = null;
+}
+
 // Wire up buttons
 btnStart.addEventListener('click', () => {
   const label = taskInput.value.trim() || 'Untitled task';
   window.pomodoroAPI.startTask(label);
   window.pomodoroAPI.getHistory().then(renderHistory);
 });
-btnStop.addEventListener('click', () => window.pomodoroAPI.stopTask());
+btnStop.addEventListener('click', () => {
+  window.pomodoroAPI.stopTask();
+  showPostStopOverlay();
+});
 btnReset.addEventListener('click', () => window.pomodoroAPI.resetCurrent());
 btnPauseResume.addEventListener('click', () => {
   if (btnPauseResume.textContent === 'Resume current') {
@@ -118,6 +155,19 @@ btnSnooze.addEventListener('click', () => {
 btnStopAlert.addEventListener('click', () => {
   window.pomodoroAPI.stopAlert();
   hideAlertOverlay();
+});
+btnPostStopBreak.addEventListener('click', () => {
+  window.pomodoroAPI.manualBreak();
+  hidePostStopOverlay();
+});
+btnPostStopNewTask.addEventListener('click', () => {
+  window.pomodoroAPI.dismissPostStop();
+  hidePostStopOverlay();
+  taskInput.focus();
+});
+btnPostStopClose.addEventListener('click', () => {
+  window.pomodoroAPI.dismissPostStop();
+  hidePostStopOverlay();
 });
 
 autoLaunchCheckbox.addEventListener('change', () => {

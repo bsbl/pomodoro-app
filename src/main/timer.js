@@ -137,9 +137,19 @@ class PomodoroTimer extends EventEmitter {
     this._startBreak();
   }
 
+  manualBreak() {
+    // Only valid right after a manual Stop (state is idle at that point).
+    if (this.state !== 'idle') return;
+    this._startBreak();
+  }
+
   _startBreak() {
     this._clearAlertTimer();
-    const isLongBreak = this.completedSessions % SESSIONS_BEFORE_LONG_BREAK === 0;
+    // completedSessions > 0 guards against a long break being wrongly
+    // triggered by manualBreak() on a very first Stop (0 % N === 0), while
+    // having no effect on the natural flow (completedSessions is always >= 1
+    // there, since _enterAlerting() increments it before this is reached).
+    const isLongBreak = this.completedSessions > 0 && this.completedSessions % SESSIONS_BEFORE_LONG_BREAK === 0;
     this.breakType = isLongBreak ? 'long' : 'short';
     this.remaining = isLongBreak ? LONG_BREAK_SECONDS : SHORT_BREAK_SECONDS;
     this.state = 'break';

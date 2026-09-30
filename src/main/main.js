@@ -13,6 +13,26 @@ let mainWindow = null;
 let tray = null;
 const timer = new PomodoroTimer();
 
+// Same value as timer.js's ALERT_TIMEOUT_SECONDS (kept separate since this
+// timeout applies after a manual Stop, not the natural end-of-session alert).
+const POST_STOP_TIMEOUT_SECONDS = 30;
+let postStopTimeoutHandle = null;
+
+function schedulePostStopTimeout() {
+  clearPostStopTimeout();
+  postStopTimeoutHandle = setTimeout(() => {
+    postStopTimeoutHandle = null;
+    timer.manualBreak();
+  }, POST_STOP_TIMEOUT_SECONDS * 1000);
+}
+
+function clearPostStopTimeout() {
+  if (postStopTimeoutHandle) {
+    clearTimeout(postStopTimeoutHandle);
+    postStopTimeoutHandle = null;
+  }
+}
+
 // Prevent a second instance (e.g. manual launch while the OS login-item /
 // autostart already started one, or a leftover process) from opening a
 // duplicate window and running a second, conflicting timer.
@@ -158,15 +178,24 @@ function wireTimerEvents() {
 
 function wireIpc() {
   ipcMain.on('start-task', (_event, label) => {
+    clearPostStopTimeout();
     store.addTask(label);
     timer.startTask(label);
   });
-  ipcMain.on('stop-task', () => timer.stopTask());
+  ipcMain.on('stop-task', () => {
+    timer.stopTask();
+    schedulePostStopTimeout();
+  });
   ipcMain.on('reset-current', () => timer.resetCurrent());
   ipcMain.on('pause-current', () => timer.pauseCurrent());
   ipcMain.on('resume-current', () => timer.resumeCurrent());
   ipcMain.on('snooze', () => timer.snooze());
   ipcMain.on('stop-alert', () => timer.stopAlert());
+  ipcMain.on('manual-break', () => {
+    clearPostStopTimeout();
+    timer.manualBreak();
+  });
+  ipcMain.on('dismiss-post-stop', () => clearPostStopTimeout());
   ipcMain.handle('get-history', () => store.loadHistory());
   ipcMain.handle('get-auto-launch', () => config.loadConfig().autoLaunch);
   ipcMain.on('set-auto-launch', (_event, enabled) => {

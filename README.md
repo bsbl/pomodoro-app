@@ -19,7 +19,11 @@ Prérequis : Node.js et npm installés.
 
 - **Start task** : démarre une session de 25 minutes pour la tâche saisie (avec
   historique des tâches précédentes en autocomplétion/liste cliquable).
-- **Stop task** : interrompt la tâche en cours, retour à l'état "Idle".
+- **Stop task** : interrompt la tâche en cours. Une proposition s'affiche
+  ensuite : **Take a break** (démarre une pause, courte ou longue selon le
+  cycle en cours), **Start new task** (place le focus sur le champ de saisie)
+  ou **Close** (reste simplement en Idle). Sans action sous 30 secondes, la
+  pause démarre automatiquement (même délai que l'alerte de fin de session).
 - **Reset current** : relance la tâche en cours depuis 25 minutes.
 - **Pause current / Resume current** : met en pause / reprend le décompte.
 - **Fin de session** : alerte visuelle (fenêtre + notification système) et sonore.

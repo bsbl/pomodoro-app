@@ -52,6 +52,20 @@
     </div>
   </div>
 
+  <!-- Overlay shown after a manual "Stop task", proposing a break or a new task -->
+  <div class="overlay hidden" id="post-stop-overlay">
+    <div class="overlay-box">
+      <p class="overlay-title">Task stopped</p>
+      <p class="overlay-subtitle">Take a break, or start a new task?</p>
+      <p class="overlay-countdown" id="post-stop-countdown"></p>
+      <div class="overlay-buttons">
+        <button id="btn-post-stop-break">Take a break</button>
+        <button id="btn-post-stop-new-task">Start new task</button>
+        <button id="btn-post-stop-close">Close</button>
+      </div>
+    </div>
+  </div>
+
   <script src="renderer.js"></script>
 </body>
 </html>
