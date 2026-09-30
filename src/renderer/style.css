@@ -87,6 +87,18 @@ button:disabled {
   opacity: 0.85;
 }
 
+.autolaunch-note {
+  font-size: 12px;
+  opacity: 0.7;
+  margin: -4px 0 0;
+}
+
+.autolaunch-note code {
+  background: #333347;
+  padding: 1px 4px;
+  border-radius: 4px;
+}
+
 .history-section h2 {
   font-size: 13px;
   text-transform: uppercase;
@@ -120,6 +132,10 @@ button:disabled {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.hidden {
+  display: none;
 }
 
 .overlay.hidden {

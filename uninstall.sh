@@ -1,24 +1,21 @@
 #!/usr/bin/env bash
-# Removes the Pomodoro Timer auto-start service installed by install.sh.
-#   macOS -> unloads and removes the launchd LaunchAgent
-#   Linux -> removes the XDG autostart entry
+# Removes the Pomodoro Timer Linux auto-start entry installed by install.sh.
+# Also best-effort removes a legacy macOS LaunchAgent from earlier versions
+# of this script (install.sh no longer creates one on macOS).
 
 set -euo pipefail
 
 LABEL="com.sebastienbel.pomodoro-timer"
 OS_NAME="$(uname -s)"
 
-uninstall_macos() {
+cleanup_legacy_macos_launchagent() {
   local plist_path="$HOME/Library/LaunchAgents/$LABEL.plist"
-  local uid
-  uid="$(id -u)"
-
   if [ -f "$plist_path" ]; then
+    local uid
+    uid="$(id -u)"
     launchctl bootout "gui/$uid" "$plist_path" >/dev/null 2>&1 || true
     rm -f "$plist_path"
-    echo "Removed launchd agent: $plist_path"
-  else
-    echo "No launchd agent found at $plist_path (nothing to do)."
+    echo "Removed legacy launchd agent from an earlier version: $plist_path"
   fi
   rm -f "/tmp/$LABEL.out.log" "/tmp/$LABEL.err.log"
 }
@@ -36,7 +33,9 @@ uninstall_linux() {
 
 case "$OS_NAME" in
   Darwin)
-    uninstall_macos
+    cleanup_legacy_macos_launchagent
+    echo "On macOS, auto-start is managed via the in-app \"Start automatically on login\" checkbox."
+    echo "Uncheck it there to disable auto-start."
     ;;
   Linux)
     uninstall_linux
@@ -48,4 +47,4 @@ case "$OS_NAME" in
     ;;
 esac
 
-echo "Auto-start service removed. The app itself is untouched (only the auto-start entry was removed)."
+echo "Done."

@@ -31,10 +31,14 @@ Prérequis : Node.js et npm installés.
 - **Tray / menu bar** : icône avec statut courant (tâche + temps restant), et menu
   pour afficher la fenêtre ou quitter l'application. Fermer la fenêtre la masque
   dans le tray plutôt que de quitter l'app.
-- **Démarrage automatique** : case à cocher "Start automatically on login" dans
-  l'interface (utilise l'API native Electron `setLoginItemSettings` — fonctionne
-  sur macOS et Windows). Pour Linux (non supporté par cette API), voir
-  `install.sh` ci-dessous.
+- **Instance unique** : un verrou empêche de lancer une deuxième fenêtre/timer en
+  parallèle (utile si l'app est déjà lancée automatiquement au login).
+- **Démarrage automatique** :
+  - **macOS / Windows** : case à cocher "Start automatically on login" dans
+    l'interface (API native Electron `setLoginItemSettings`). C'est l'unique
+    mécanisme sur ces deux OS.
+  - **Linux** (non supporté par cette API) : la case est masquée et remplacée par
+    une note renvoyant vers `install.sh` (voir plus bas).
 - **Historique des tâches** : sauvegardé dans `~/.pomodoro/history.json`.
 - **Configuration** : sauvegardée séparément dans `~/.pomodoro/config.json`
   (actuellement : préférence de démarrage automatique).
@@ -62,26 +66,25 @@ pomodoro-app/
   history.json    # historique des tâches saisies
 ```
 
-## Installer/désinstaller comme service auto-start (macOS / Linux)
+## Auto-start sur Linux (install.sh / uninstall.sh)
 
-En complément de la case à cocher dans l'UI, deux scripts permettent d'enregistrer
-l'application comme service qui démarre automatiquement à la connexion :
+Sur macOS et Windows, la case à cocher dans l'UI suffit (voir ci-dessus). Sur
+Linux, où l'API Electron correspondante n'est pas implémentée, ces scripts
+gèrent l'auto-start à sa place :
 
 ```bash
-./install.sh     # installe le service auto-start
-./uninstall.sh   # le désinstalle
+./install.sh     # crée l'entrée XDG autostart
+./uninstall.sh   # la retire
 ```
 
-- **macOS** : crée un LaunchAgent (`~/Library/LaunchAgents/com.sebastienbel.pomodoro-timer.plist`)
-  chargé via `launchctl`. L'app démarre à la prochaine connexion, ou immédiatement
-  avec `launchctl kickstart -k gui/$(id -u)/com.sebastienbel.pomodoro-timer`.
-- **Linux** : crée une entrée XDG autostart (`~/.config/autostart/pomodoro-timer.desktop`),
-  lue automatiquement par la session graphique (GNOME/KDE/XFCE...) à la connexion.
-- **Windows** : ces scripts `.sh` ne s'appliquent pas. Utilise la case à cocher
-  "Start automatically on login" dans l'interface (Registre Windows via Electron).
-
-`uninstall.sh` ne fait que retirer l'entrée auto-start ; l'application elle-même
-n'est pas supprimée.
+- Crée une entrée `~/.config/autostart/pomodoro-timer.desktop`, lue
+  automatiquement par la session graphique (GNOME/KDE/XFCE...) à la connexion.
+- Sur macOS/Windows, `install.sh` refuse de s'exécuter et renvoie vers la case
+  à cocher (avoir les deux mécanismes actifs en même temps lancerait l'app deux
+  fois au login). `uninstall.sh` retire aussi, en best-effort, tout LaunchAgent
+  macOS résiduel créé par une version antérieure de ce script.
+- `uninstall.sh` ne fait que retirer l'entrée auto-start ; l'application
+  elle-même n'est pas supprimée.
 
 ## Notes
 

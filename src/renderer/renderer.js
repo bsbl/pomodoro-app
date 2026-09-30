@@ -8,6 +8,8 @@ const taskInput = document.getElementById('task-input');
 const taskHistoryDatalist = document.getElementById('task-history');
 const historyList = document.getElementById('history-list');
 const autoLaunchCheckbox = document.getElementById('autolaunch-checkbox');
+const autoLaunchRow = document.getElementById('autolaunch-row');
+const autoLaunchNote = document.getElementById('autolaunch-note');
 
 const btnStart = document.getElementById('btn-start');
 const btnStop = document.getElementById('btn-stop');
@@ -144,7 +146,15 @@ window.pomodoroAPI.onBreakEnd((snapshot) => {
 
 // Initial load
 window.pomodoroAPI.getHistory().then(renderHistory);
-window.pomodoroAPI.getAutoLaunch().then((enabled) => {
-  autoLaunchCheckbox.checked = !!enabled;
-});
+
+if (window.pomodoroAPI.platform === 'linux') {
+  // Electron's setLoginItemSettings is not implemented on Linux: the
+  // checkbox would silently do nothing there, so point to install.sh instead.
+  autoLaunchRow.classList.add('hidden');
+  autoLaunchNote.classList.remove('hidden');
+} else {
+  window.pomodoroAPI.getAutoLaunch().then((enabled) => {
+    autoLaunchCheckbox.checked = !!enabled;
+  });
+}
 updateButtonsForState('idle');

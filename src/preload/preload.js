@@ -3,6 +3,10 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('pomodoroAPI', {
+  // Read-only platform info ('darwin' | 'win32' | 'linux'), used to adapt
+  // the UI (e.g. auto-start checkbox is only functional on macOS/Windows).
+  platform: process.platform,
+
   // Commands
   startTask: (label) => ipcRenderer.send('start-task', label),
   stopTask: () => ipcRenderer.send('stop-task'),

@@ -13,6 +13,21 @@ let mainWindow = null;
 let tray = null;
 const timer = new PomodoroTimer();
 
+// Prevent a second instance (e.g. manual launch while the OS login-item /
+// autostart already started one, or a leftover process) from opening a
+// duplicate window and running a second, conflicting timer.
+const gotSingleInstanceLock = app.requestSingleInstanceLock();
+if (!gotSingleInstanceLock) {
+  app.quit();
+} else {
+  app.on('second-instance', () => {
+    if (mainWindow) {
+      mainWindow.show();
+      mainWindow.focus();
+    }
+  });
+}
+
 function formatTime(totalSeconds) {
   const m = Math.floor(totalSeconds / 60)
     .toString()
@@ -28,6 +43,7 @@ function createWindow() {
     width: 380,
     height: 520,
     resizable: false,
+    icon: path.join(__dirname, '..', '..', 'assets', 'icons', 'app.png'),
     webPreferences: {
       preload: path.join(__dirname, '..', 'preload', 'preload.js'),
       contextIsolation: true,
@@ -159,28 +175,37 @@ function wireIpc() {
   });
 }
 
-app.whenReady().then(() => {
-  createWindow();
-  createTray();
-  wireTimerEvents();
-  wireIpc();
+if (gotSingleInstanceLock) {
+  app.whenReady().then(() => {
+    // In dev mode (unpackaged `electron .`), the Dock shows the generic
+    // Electron icon unless we set it explicitly. Packaged builds would use
+    // the icon baked into the app bundle instead.
+    if (process.platform === 'darwin' && app.dock) {
+      app.dock.setIcon(path.join(__dirname, '..', '..', 'assets', 'icons', 'app.png'));
+    }
 
-  // Re-apply the saved auto-launch preference at startup, so ~/.pomodoro/config.json
-  // stays the source of truth (useful notably on Linux, where the OS-native
-  // login-item API used by autostart.js is not available).
-  const savedConfig = config.loadConfig();
-  setAutoLaunch(savedConfig.autoLaunch);
+    createWindow();
+    createTray();
+    wireTimerEvents();
+    wireIpc();
 
-  app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow();
-    else mainWindow.show();
+    // Re-apply the saved auto-launch preference at startup, so ~/.pomodoro/config.json
+    // stays the source of truth (useful notably on Linux, where the OS-native
+    // login-item API used by autostart.js is not available).
+    const savedConfig = config.loadConfig();
+    setAutoLaunch(savedConfig.autoLaunch);
+
+    app.on('activate', () => {
+      if (BrowserWindow.getAllWindows().length === 0) createWindow();
+      else mainWindow.show();
+    });
   });
-});
 
-app.on('before-quit', () => {
-  app.isQuitting = true;
-});
+  app.on('before-quit', () => {
+    app.isQuitting = true;
+  });
 
-app.on('window-all-closed', () => {
-  // Keep running in tray on all platforms; user quits via tray menu.
-});
+  app.on('window-all-closed', () => {
+    // Keep running in tray on all platforms; user quits via tray menu.
+  });
+}
