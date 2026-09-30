@@ -1,0 +1,163 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: #1e1e2e;
+  color: #eaeaea;
+}
+
+.app {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+h1 {
+  text-align: center;
+  margin: 0 0 4px;
+  font-size: 22px;
+}
+
+.time-display {
+  text-align: center;
+  font-size: 48px;
+  font-weight: 700;
+  letter-spacing: 2px;
+}
+
+.state-label {
+  text-align: center;
+  font-size: 14px;
+  opacity: 0.75;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.task-row input {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid #444;
+  background: #2a2a3d;
+  color: #eaeaea;
+  font-size: 14px;
+}
+
+.button-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+button {
+  padding: 10px;
+  border: none;
+  border-radius: 6px;
+  background: #3f3f5f;
+  color: #eaeaea;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #52527a;
+}
+
+button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+#btn-start {
+  background: #4caf7d;
+}
+#btn-stop {
+  background: #c0563a;
+}
+
+.autolaunch-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  opacity: 0.85;
+}
+
+.history-section h2 {
+  font-size: 13px;
+  text-transform: uppercase;
+  opacity: 0.6;
+  margin: 8px 0 4px;
+}
+
+#history-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 130px;
+  overflow-y: auto;
+  font-size: 13px;
+}
+
+#history-list li {
+  padding: 4px 0;
+  border-bottom: 1px solid #333347;
+  cursor: pointer;
+}
+
+#history-list li:hover {
+  color: #8ecdb7;
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.overlay.hidden {
+  display: none;
+}
+
+.overlay-box {
+  background: #2a2a3d;
+  padding: 28px;
+  border-radius: 10px;
+  text-align: center;
+  width: 300px;
+}
+
+.overlay-title {
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0 0 6px;
+}
+
+.overlay-subtitle {
+  font-size: 14px;
+  opacity: 0.85;
+  margin: 0 0 14px;
+}
+
+.overlay-countdown {
+  font-size: 13px;
+  opacity: 0.6;
+  margin: 0 0 16px;
+}
+
+.overlay-buttons {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+#btn-stop-alert {
+  background: #c0563a;
+}

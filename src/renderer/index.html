@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Pomodoro Timer</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app">
+    <h1>🍅 Pomodoro</h1>
+
+    <div class="time-display" id="time-display">25:00</div>
+    <div class="state-label" id="state-label">Idle</div>
+
+    <div class="task-row">
+      <input type="text" id="task-input" list="task-history" placeholder="What are you working on?" />
+      <datalist id="task-history"></datalist>
+    </div>
+
+    <div class="button-grid">
+      <button id="btn-start">Start task</button>
+      <button id="btn-stop">Stop task</button>
+      <button id="btn-reset">Reset current</button>
+      <button id="btn-pause-resume">Pause current</button>
+    </div>
+
+    <label class="autolaunch-row">
+      <input type="checkbox" id="autolaunch-checkbox" />
+      Start automatically on login
+    </label>
+
+    <div class="history-section">
+      <h2>Task history</h2>
+      <ul id="history-list"></ul>
+    </div>
+  </div>
+
+  <!-- Alert overlay shown when a work session ends -->
+  <div class="overlay hidden" id="alert-overlay">
+    <div class="overlay-box">
+      <p class="overlay-title">Time's up!</p>
+      <p class="overlay-subtitle" id="overlay-subtitle">Task finished.</p>
+      <p class="overlay-countdown" id="overlay-countdown"></p>
+      <div class="overlay-buttons">
+        <button id="btn-snooze">Snooze (+1 min)</button>
+        <button id="btn-stop-alert">Stop (start break)</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="renderer.js"></script>
+</body>
+</html>
