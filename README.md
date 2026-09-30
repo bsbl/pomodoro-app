@@ -85,11 +85,18 @@ npm --version
 - **Instance unique** : un verrou empêche de lancer une deuxième fenêtre/timer en
   parallèle (utile si l'app est déjà lancée automatiquement au login).
 - **Démarrage automatique** :
-  - **macOS / Windows** : case à cocher "Start automatically on login" dans
-    l'interface (API native Electron `setLoginItemSettings`). C'est l'unique
-    mécanisme sur ces deux OS.
-  - **Linux** (non supporté par cette API) : la case est masquée et remplacée par
-    une note renvoyant vers `install.sh` (voir plus bas).
+  - **macOS** : case à cocher "Start automatically on login" dans l'interface.
+    En interne, gère un LaunchAgent launchd
+    (`~/Library/LaunchAgents/com.sebastienbel.pomodoro-timer.plist`) plutôt
+    que l'API `setLoginItemSettings` d'Electron — celle-ci s'est révélée peu
+    fiable en mode développement non empaqueté sur macOS récent (les
+    arguments de lancement custom ne sont pas toujours transmis, ce qui
+    faisait démarrer Electron sans projet chargé).
+  - **Windows** : même case à cocher, via l'API native Electron
+    `setLoginItemSettings` (Registre `Run`), qui fonctionne de façon fiable
+    ici.
+  - **Linux** (non supporté par ces mécanismes) : la case est masquée et
+    remplacée par une note renvoyant vers `install.sh` (voir plus bas).
 - **Historique des tâches** : sauvegardé dans `~/.pomodoro/history.json`.
 - **Configuration** : sauvegardée séparément dans `~/.pomodoro/config.json`
   (actuellement : préférence de démarrage automatique).

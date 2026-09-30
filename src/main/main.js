@@ -6,7 +6,7 @@ const path = require('path');
 const { PomodoroTimer } = require('./timer');
 const store = require('./store');
 const { playAlertSound } = require('./sound');
-const { setAutoLaunch } = require('./autostart');
+const { setAutoLaunch, cleanupLegacyLoginItem } = require('./autostart');
 const config = require('./config');
 
 let mainWindow = null;
@@ -221,6 +221,9 @@ if (gotSingleInstanceLock) {
     // Re-apply the saved auto-launch preference at startup, so ~/.pomodoro/config.json
     // stays the source of truth (useful notably on Linux, where the OS-native
     // login-item API used by autostart.js is not available).
+    // On macOS, also clear out any leftover legacy login item from earlier
+    // versions of this app (before the switch to a launchd LaunchAgent).
+    cleanupLegacyLoginItem();
     const savedConfig = config.loadConfig();
     setAutoLaunch(savedConfig.autoLaunch);
 
