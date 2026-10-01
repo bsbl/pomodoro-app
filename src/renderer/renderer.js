@@ -41,6 +41,8 @@ const btnSettingsCancel = document.getElementById('btn-settings-cancel');
 
 let alertCountdownInterval = null;
 let postStopCountdownInterval = null;
+let currentState = 'idle';
+let lastSettings = null;
 
 function formatTime(totalSeconds) {
   const m = Math.floor(totalSeconds / 60).toString().padStart(2, '0');
@@ -74,7 +76,14 @@ function updateButtonsForState(state) {
 }
 
 function applySnapshot(snapshot) {
-  timeDisplay.textContent = formatTime(snapshot.remaining);
+  currentState = snapshot.state;
+  // The idle state's remaining is always 0 (no task counting down); show
+  // the configured task duration as a placeholder instead of "00:00".
+  if (snapshot.state === 'idle' && lastSettings) {
+    timeDisplay.textContent = formatTime(lastSettings.workMinutes * 60);
+  } else {
+    timeDisplay.textContent = formatTime(snapshot.remaining);
+  }
 
   let label = 'Idle';
   if (snapshot.state === 'running') label = `Working: ${snapshot.taskLabel || ''}`;
@@ -138,6 +147,16 @@ function hidePostStopOverlay() {
   postStopOverlay.classList.add('hidden');
   clearInterval(postStopCountdownInterval);
   postStopCountdownInterval = null;
+}
+
+// The idle screen shows a placeholder time (next task's duration) rather
+// than a live countdown. Refresh it whenever settings change/load so it
+// doesn't keep showing a stale duration (e.g. "25:00" after switching to
+// 30 minutes) until the user actually starts a task.
+function refreshIdleTimeDisplay(settings) {
+  lastSettings = settings;
+  if (currentState !== 'idle') return;
+  timeDisplay.textContent = formatTime(settings.workMinutes * 60);
 }
 
 function showSettingsOverlay() {
@@ -230,6 +249,7 @@ btnSettingsSave.addEventListener('click', () => {
       return;
     }
     hideSettingsOverlay();
+    refreshIdleTimeDisplay(settings);
   });
 });
 
@@ -255,6 +275,7 @@ window.pomodoroAPI.onBreakEnd((snapshot) => {
 
 // Initial load
 window.pomodoroAPI.getHistory().then(renderHistory);
+window.pomodoroAPI.getSettings().then(refreshIdleTimeDisplay);
 
 if (window.pomodoroAPI.platform === 'linux') {
   // Electron's setLoginItemSettings is not implemented on Linux: the
