@@ -7,7 +7,10 @@
 </head>
 <body>
   <div class="app">
-    <h1>🍅 Pomodoro</h1>
+    <div class="header-row">
+      <h1>🍅 Pomodoro</h1>
+      <button class="icon-button" id="btn-open-settings" title="Settings">⚙</button>
+    </div>
 
     <div class="time-display" id="time-display">25:00</div>
     <div class="state-label" id="state-label">Idle</div>
@@ -62,6 +65,37 @@
         <button id="btn-post-stop-break">Take a break</button>
         <button id="btn-post-stop-new-task">Start new task</button>
         <button id="btn-post-stop-close">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings overlay: task/break durations + sessions before a long break -->
+  <div class="overlay hidden" id="settings-overlay">
+    <div class="overlay-box">
+      <p class="overlay-title">Settings</p>
+      <p class="overlay-subtitle">Changes apply to the next task or break — not the one currently running.</p>
+      <div class="settings-form">
+        <label>
+          Task duration (minutes)
+          <input type="number" id="setting-work-minutes" min="1" max="180" step="1" />
+        </label>
+        <label>
+          Short break duration (minutes)
+          <input type="number" id="setting-short-break-minutes" min="1" max="180" step="1" />
+        </label>
+        <label>
+          Long break duration (minutes)
+          <input type="number" id="setting-long-break-minutes" min="1" max="180" step="1" />
+        </label>
+        <label>
+          Tasks before a long break
+          <input type="number" id="setting-sessions-before-long-break" min="1" max="20" step="1" />
+        </label>
+      </div>
+      <p class="settings-error hidden" id="settings-error"></p>
+      <div class="overlay-buttons">
+        <button id="btn-settings-save">Save</button>
+        <button id="btn-settings-cancel">Cancel</button>
       </div>
     </div>
   </div>

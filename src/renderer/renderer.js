@@ -29,6 +29,16 @@ const btnPostStopBreak = document.getElementById('btn-post-stop-break');
 const btnPostStopNewTask = document.getElementById('btn-post-stop-new-task');
 const btnPostStopClose = document.getElementById('btn-post-stop-close');
 
+const btnOpenSettings = document.getElementById('btn-open-settings');
+const settingsOverlay = document.getElementById('settings-overlay');
+const settingsError = document.getElementById('settings-error');
+const inputWorkMinutes = document.getElementById('setting-work-minutes');
+const inputShortBreakMinutes = document.getElementById('setting-short-break-minutes');
+const inputLongBreakMinutes = document.getElementById('setting-long-break-minutes');
+const inputSessionsBeforeLongBreak = document.getElementById('setting-sessions-before-long-break');
+const btnSettingsSave = document.getElementById('btn-settings-save');
+const btnSettingsCancel = document.getElementById('btn-settings-cancel');
+
 let alertCountdownInterval = null;
 let postStopCountdownInterval = null;
 
@@ -130,6 +140,22 @@ function hidePostStopOverlay() {
   postStopCountdownInterval = null;
 }
 
+function showSettingsOverlay() {
+  settingsError.classList.add('hidden');
+  settingsError.textContent = '';
+  window.pomodoroAPI.getSettings().then((settings) => {
+    inputWorkMinutes.value = settings.workMinutes;
+    inputShortBreakMinutes.value = settings.shortBreakMinutes;
+    inputLongBreakMinutes.value = settings.longBreakMinutes;
+    inputSessionsBeforeLongBreak.value = settings.sessionsBeforeLongBreak;
+    settingsOverlay.classList.remove('hidden');
+  });
+}
+
+function hideSettingsOverlay() {
+  settingsOverlay.classList.add('hidden');
+}
+
 // Wire up buttons
 btnStart.addEventListener('click', () => {
   const label = taskInput.value.trim() || 'Untitled task';
@@ -172,6 +198,39 @@ btnPostStopClose.addEventListener('click', () => {
 
 autoLaunchCheckbox.addEventListener('change', () => {
   window.pomodoroAPI.setAutoLaunch(autoLaunchCheckbox.checked);
+});
+
+btnOpenSettings.addEventListener('click', showSettingsOverlay);
+window.pomodoroAPI.onOpenSettings(showSettingsOverlay);
+
+btnSettingsCancel.addEventListener('click', hideSettingsOverlay);
+
+btnSettingsSave.addEventListener('click', () => {
+  const settings = {
+    workMinutes: parseInt(inputWorkMinutes.value, 10),
+    shortBreakMinutes: parseInt(inputShortBreakMinutes.value, 10),
+    longBreakMinutes: parseInt(inputLongBreakMinutes.value, 10),
+    sessionsBeforeLongBreak: parseInt(inputSessionsBeforeLongBreak.value, 10),
+  };
+  const isValid = (n, max) => Number.isInteger(n) && n >= 1 && n <= max;
+  if (
+    !isValid(settings.workMinutes, 180) ||
+    !isValid(settings.shortBreakMinutes, 180) ||
+    !isValid(settings.longBreakMinutes, 180) ||
+    !isValid(settings.sessionsBeforeLongBreak, 20)
+  ) {
+    settingsError.textContent = 'Please enter whole numbers: 1-180 minutes, 1-20 tasks.';
+    settingsError.classList.remove('hidden');
+    return;
+  }
+  window.pomodoroAPI.setSettings(settings).then((result) => {
+    if (!result || !result.ok) {
+      settingsError.textContent = (result && result.error) || 'Could not save settings.';
+      settingsError.classList.remove('hidden');
+      return;
+    }
+    hideSettingsOverlay();
+  });
 });
 
 // Wire up main-process events

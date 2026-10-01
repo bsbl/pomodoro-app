@@ -3,7 +3,7 @@
 const { app, BrowserWindow, Tray, Menu, Notification, ipcMain, nativeImage } = require('electron');
 const path = require('path');
 
-const { PomodoroTimer, WORK_SECONDS, SHORT_BREAK_SECONDS, LONG_BREAK_SECONDS } = require('./timer');
+const { PomodoroTimer } = require('./timer');
 const store = require('./store');
 const { playAlertSound } = require('./sound');
 const { setAutoLaunch, cleanupLegacyLoginItem } = require('./autostart');
@@ -121,6 +121,14 @@ function updateTrayMenu(snapshot) {
     { label: statusLabel, enabled: false },
     { type: 'separator' },
     { label: 'Show window', click: () => mainWindow.show() },
+    {
+      label: 'Settings…',
+      click: () => {
+        mainWindow.show();
+        mainWindow.focus();
+        sendToRenderer('open-settings');
+      },
+    },
     { type: 'separator' },
     {
       label: 'Quit',
@@ -140,10 +148,24 @@ function updateTrayMenu(snapshot) {
 let lastTrayIconKey = null;
 
 function totalSecondsForState(s) {
+  const settings = timer.getSettings();
   if (s.state === 'break') {
-    return s.breakType === 'long' ? LONG_BREAK_SECONDS : SHORT_BREAK_SECONDS;
+    return s.breakType === 'long' ? settings.longBreakSeconds : settings.shortBreakSeconds;
   }
-  return WORK_SECONDS;
+  return settings.workSeconds;
+}
+
+// Applies the saved (or default) durations/session-count config to the
+// timer. Called at startup, and again whenever the settings UI saves new
+// values. Only affects the *next* task/break (see timer.configure()).
+function applySettingsToTimer() {
+  const c = config.loadConfig();
+  timer.configure({
+    workSeconds: c.workMinutes * 60,
+    shortBreakSeconds: c.shortBreakMinutes * 60,
+    longBreakSeconds: c.longBreakMinutes * 60,
+    sessionsBeforeLongBreak: c.sessionsBeforeLongBreak,
+  });
 }
 
 function updateTrayIcon(snapshot) {
@@ -259,6 +281,40 @@ function wireIpc() {
     setAutoLaunch(enabled);
     config.saveConfig({ autoLaunch: enabled });
   });
+  ipcMain.handle('get-settings', () => {
+    const c = config.loadConfig();
+    return {
+      workMinutes: c.workMinutes,
+      shortBreakMinutes: c.shortBreakMinutes,
+      longBreakMinutes: c.longBreakMinutes,
+      sessionsBeforeLongBreak: c.sessionsBeforeLongBreak,
+    };
+  });
+  ipcMain.handle('set-settings', (_event, settings) => {
+    const sanitized = sanitizeSettings(settings);
+    if (!sanitized) return { ok: false, error: 'Invalid settings: all fields must be positive whole numbers.' };
+    config.saveConfig(sanitized);
+    applySettingsToTimer();
+    return { ok: true };
+  });
+}
+
+// Whole numbers only, within sane bounds (1-180 minutes, 1-20 sessions) —
+// matches the <input type="number" min max step="1"> constraints in the
+// settings UI, re-checked here since IPC input can't be trusted as-is.
+function sanitizeSettings(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+  const isValid = (n, max) => Number.isInteger(n) && n >= 1 && n <= max;
+  const { workMinutes, shortBreakMinutes, longBreakMinutes, sessionsBeforeLongBreak } = raw;
+  if (
+    !isValid(workMinutes, 180) ||
+    !isValid(shortBreakMinutes, 180) ||
+    !isValid(longBreakMinutes, 180) ||
+    !isValid(sessionsBeforeLongBreak, 20)
+  ) {
+    return null;
+  }
+  return { workMinutes, shortBreakMinutes, longBreakMinutes, sessionsBeforeLongBreak };
 }
 
 if (gotSingleInstanceLock) {
@@ -270,6 +326,7 @@ if (gotSingleInstanceLock) {
       app.dock.setIcon(path.join(__dirname, '..', '..', 'assets', 'icons', 'app.png'));
     }
 
+    applySettingsToTimer();
     createWindow();
     createTray();
     wireTimerEvents();

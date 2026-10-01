@@ -7,6 +7,10 @@ const CONFIG_FILE = path.join(APP_DATA_DIR, 'config.json');
 
 const DEFAULT_CONFIG = {
   autoLaunch: false,
+  workMinutes: 25,
+  shortBreakMinutes: 5,
+  longBreakMinutes: 15,
+  sessionsBeforeLongBreak: 4,
 };
 
 function loadConfig() {

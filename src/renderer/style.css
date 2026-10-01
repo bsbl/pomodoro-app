@@ -22,6 +22,26 @@ h1 {
   font-size: 22px;
 }
 
+.header-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.icon-button {
+  position: absolute;
+  right: 0;
+  top: 0;
+  background: transparent;
+  padding: 4px 8px;
+  font-size: 16px;
+}
+
+.icon-button:hover {
+  background: #3f3f5f;
+}
+
 .time-display {
   text-align: center;
   font-size: 48px;
@@ -176,4 +196,35 @@ button:disabled {
 
 #btn-stop-alert {
   background: #c0563a;
+}
+
+.settings-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  text-align: left;
+  margin-bottom: 10px;
+}
+
+.settings-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  opacity: 0.85;
+}
+
+.settings-form input {
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid #444;
+  background: #1e1e2e;
+  color: #eaeaea;
+  font-size: 14px;
+}
+
+.settings-error {
+  color: #e2574c;
+  font-size: 12px;
+  margin: -4px 0 12px;
 }

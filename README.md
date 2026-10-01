@@ -99,7 +99,16 @@ npm --version
     remplacée par une note renvoyant vers `install.sh` (voir plus bas).
 - **Historique des tâches** : sauvegardé dans `~/.pomodoro/history.json`.
 - **Configuration** : sauvegardée séparément dans `~/.pomodoro/config.json`
-  (actuellement : préférence de démarrage automatique).
+  (préférence de démarrage automatique, et durées/paramètres ci-dessous).
+- **Paramètres (durées)** : accessibles via le bouton **⚙** dans la fenêtre, ou
+  l'entrée **Settings…** du menu tray/menu bar. Permet de configurer :
+  - la durée d'une tâche (25' par défaut),
+  - la durée d'une pause courte (5' par défaut),
+  - la durée d'une pause longue (15' par défaut),
+  - le nombre de tâches avant une pause longue (4 par défaut).
+
+  Les changements ne s'appliquent qu'à la **prochaine** tâche/pause démarrée —
+  ils n'affectent pas un décompte déjà en cours.
 
 ## Structure du projet
 
@@ -121,7 +130,7 @@ pomodoro-app/
 
 ```
 ~/.pomodoro/
-  config.json    # configuration (ex: démarrage automatique)
+  config.json    # configuration (démarrage automatique, durées des tâches/pauses)
   history.json    # historique des tâches saisies
 ```
 

@@ -22,6 +22,35 @@ class PomodoroTimer extends EventEmitter {
     this.breakType = null; // 'short' | 'long'
     this.completedSessions = 0;
     this._interval = null;
+
+    // Configurable durations (seconds) / session count, defaulting to the
+    // module-level constants below. Overridden via configure(), e.g. from
+    // the user-editable settings UI.
+    this.workSeconds = WORK_SECONDS;
+    this.shortBreakSeconds = SHORT_BREAK_SECONDS;
+    this.longBreakSeconds = LONG_BREAK_SECONDS;
+    this.sessionsBeforeLongBreak = SESSIONS_BEFORE_LONG_BREAK;
+  }
+
+  // Updates the configurable durations/session count. Only affects the
+  // *next* task/break started (startTask/resetCurrent/_startBreak) — it
+  // never mutates a timer that's already counting down.
+  configure({ workSeconds, shortBreakSeconds, longBreakSeconds, sessionsBeforeLongBreak } = {}) {
+    if (Number.isFinite(workSeconds) && workSeconds > 0) this.workSeconds = workSeconds;
+    if (Number.isFinite(shortBreakSeconds) && shortBreakSeconds > 0) this.shortBreakSeconds = shortBreakSeconds;
+    if (Number.isFinite(longBreakSeconds) && longBreakSeconds > 0) this.longBreakSeconds = longBreakSeconds;
+    if (Number.isInteger(sessionsBeforeLongBreak) && sessionsBeforeLongBreak > 0) {
+      this.sessionsBeforeLongBreak = sessionsBeforeLongBreak;
+    }
+  }
+
+  getSettings() {
+    return {
+      workSeconds: this.workSeconds,
+      shortBreakSeconds: this.shortBreakSeconds,
+      longBreakSeconds: this.longBreakSeconds,
+      sessionsBeforeLongBreak: this.sessionsBeforeLongBreak,
+    };
   }
 
   getSnapshot() {
@@ -68,7 +97,7 @@ class PomodoroTimer extends EventEmitter {
   startTask(label) {
     this.taskLabel = label;
     this.state = 'running';
-    this.remaining = WORK_SECONDS;
+    this.remaining = this.workSeconds;
     this.breakType = null;
     this._startInterval();
     this._emitUpdate();
@@ -85,7 +114,7 @@ class PomodoroTimer extends EventEmitter {
 
   resetCurrent() {
     if (this.state !== 'running' && this.state !== 'paused') return;
-    this.remaining = WORK_SECONDS;
+    this.remaining = this.workSeconds;
     this.state = 'running';
     this._startInterval();
     this._emitUpdate();
@@ -149,9 +178,9 @@ class PomodoroTimer extends EventEmitter {
     // triggered by manualBreak() on a very first Stop (0 % N === 0), while
     // having no effect on the natural flow (completedSessions is always >= 1
     // there, since _enterAlerting() increments it before this is reached).
-    const isLongBreak = this.completedSessions > 0 && this.completedSessions % SESSIONS_BEFORE_LONG_BREAK === 0;
+    const isLongBreak = this.completedSessions > 0 && this.completedSessions % this.sessionsBeforeLongBreak === 0;
     this.breakType = isLongBreak ? 'long' : 'short';
-    this.remaining = isLongBreak ? LONG_BREAK_SECONDS : SHORT_BREAK_SECONDS;
+    this.remaining = isLongBreak ? this.longBreakSeconds : this.shortBreakSeconds;
     this.state = 'break';
     this._startInterval();
     this._emitUpdate();

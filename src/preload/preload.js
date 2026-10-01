@@ -20,6 +20,8 @@ contextBridge.exposeInMainWorld('pomodoroAPI', {
   getHistory: () => ipcRenderer.invoke('get-history'),
   getAutoLaunch: () => ipcRenderer.invoke('get-auto-launch'),
   setAutoLaunch: (enabled) => ipcRenderer.send('set-auto-launch', enabled),
+  getSettings: () => ipcRenderer.invoke('get-settings'),
+  setSettings: (settings) => ipcRenderer.invoke('set-settings', settings),
 
   // Events (main -> renderer)
   onUpdate: (callback) => {
@@ -33,5 +35,8 @@ contextBridge.exposeInMainWorld('pomodoroAPI', {
   },
   onBreakEnd: (callback) => {
     ipcRenderer.on('timer-break-end', (_event, snapshot) => callback(snapshot));
+  },
+  onOpenSettings: (callback) => {
+    ipcRenderer.on('open-settings', () => callback());
   },
 });
