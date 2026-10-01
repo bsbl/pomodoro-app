@@ -3,11 +3,18 @@
 const { app, BrowserWindow, Tray, Menu, Notification, ipcMain, nativeImage } = require('electron');
 const path = require('path');
 
-const { PomodoroTimer } = require('./timer');
+const { PomodoroTimer, WORK_SECONDS, SHORT_BREAK_SECONDS, LONG_BREAK_SECONDS } = require('./timer');
 const store = require('./store');
 const { playAlertSound } = require('./sound');
 const { setAutoLaunch, cleanupLegacyLoginItem } = require('./autostart');
 const config = require('./config');
+const { renderTrayIcon } = require('./tray-icon');
+
+const ACCENT_COLORS = {
+  work: '#e2574c',
+  short: '#3fb562',
+  long: '#3b82c4',
+};
 
 let mainWindow = null;
 let tray = null;
@@ -92,6 +99,7 @@ function createTray() {
   tray = new Tray(icon);
   tray.setToolTip('Pomodoro Timer');
   updateTrayMenu();
+  updateTrayIcon();
   tray.on('click', () => {
     if (mainWindow.isVisible()) {
       mainWindow.hide();
@@ -126,6 +134,51 @@ function updateTrayMenu(snapshot) {
   tray.setToolTip(`Pomodoro — ${statusLabel}`);
 }
 
+// Tracks the last rendered minute value (and state) so updateTrayIcon only
+// triggers an actual re-render on minute boundaries or state changes, not
+// on every second-level timer tick.
+let lastTrayIconKey = null;
+
+function totalSecondsForState(s) {
+  if (s.state === 'break') {
+    return s.breakType === 'long' ? LONG_BREAK_SECONDS : SHORT_BREAK_SECONDS;
+  }
+  return WORK_SECONDS;
+}
+
+function updateTrayIcon(snapshot) {
+  const s = snapshot || timer.getSnapshot();
+  const showRing = s.state === 'running' || s.state === 'paused' || s.state === 'break';
+  const minutesLabel = showRing ? Math.max(0, Math.ceil(s.remaining / 60)) : null;
+
+  const key = showRing ? `${s.state}:${s.breakType}:${minutesLabel}` : s.state;
+  if (key === lastTrayIconKey) return;
+  lastTrayIconKey = key;
+
+  const fraction = showRing ? s.remaining / totalSecondsForState(s) : 1;
+  const accentColor = s.state === 'break' ? ACCENT_COLORS[s.breakType === 'long' ? 'long' : 'short'] : ACCENT_COLORS.work;
+
+  renderTrayIcon({ fraction, accentColor, showRing })
+    .then((image) => {
+      // Match the sizing already applied to the static tray icon in
+      // createTray() (20x20 on macOS; left at native size elsewhere).
+      if (process.platform === 'darwin') {
+        image = image.resize({ width: 20, height: 20 });
+      }
+      if (tray && !tray.isDestroyed()) tray.setImage(image);
+    })
+    .catch(() => {
+      // Best-effort: keep the previous icon if rendering fails for any reason.
+    });
+
+  if (process.platform === 'darwin') {
+    // Tray.setTitle (text next to the menu bar icon) is only supported on
+    // macOS; Windows/Linux tray icons are icon-only (tooltip covers text
+    // there, see updateTrayMenu above).
+    tray.setTitle(showRing ? ` ${minutesLabel}m` : '');
+  }
+}
+
 function sendToRenderer(channel, payload) {
   if (mainWindow && !mainWindow.isDestroyed()) {
     mainWindow.webContents.send(channel, payload);
@@ -136,10 +189,12 @@ function wireTimerEvents() {
   timer.on('update', (snapshot) => {
     sendToRenderer('timer-update', snapshot);
     updateTrayMenu(snapshot);
+    updateTrayIcon(snapshot);
   });
 
   timer.on('alert', (snapshot) => {
     sendToRenderer('timer-alert', snapshot);
+    updateTrayIcon(snapshot);
     playAlertSound();
     if (Notification.isSupported()) {
       new Notification({
@@ -156,6 +211,7 @@ function wireTimerEvents() {
 
   timer.on('break-start', (snapshot) => {
     sendToRenderer('timer-break-start', snapshot);
+    updateTrayIcon(snapshot);
     if (mainWindow) mainWindow.flashFrame(false);
     if (Notification.isSupported()) {
       new Notification({
@@ -167,6 +223,7 @@ function wireTimerEvents() {
 
   timer.on('break-end', (snapshot) => {
     sendToRenderer('timer-break-end', snapshot);
+    updateTrayIcon(snapshot);
     if (Notification.isSupported()) {
       new Notification({
         title: 'Pomodoro',
