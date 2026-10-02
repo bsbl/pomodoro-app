@@ -154,6 +154,49 @@ gèrent l'auto-start à sa place :
 - `uninstall.sh` ne fait que retirer l'entrée auto-start ; l'application
   elle-même n'est pas supprimée.
 
+## Release (CI) — build Tauri multi-plateforme
+
+### Build local
+
+**macOS / Linux :**
+```bash
+./build.sh
+```
+
+**Windows :**
+```bat
+build.bat
+```
+
+Ces scripts installent Rust automatiquement si `cargo` est absent
+(via rustup), installent les dépendances système Linux manquantes
+(webkit2gtk, etc., via `apt-get`), installent les dépendances npm puis
+lancent `npm run tauri:build`. Les artefacts (`.app`/`.dmg` sur macOS,
+`.deb`/`.AppImage`/`.rpm` sur Linux, `.msi`/`.exe` sur Windows) sont
+générés dans `target/release/bundle/`.
+
+Sur Windows, si Rust vient d'être installé, relance `build.bat` dans une
+nouvelle invite de commandes (le PATH n'est mis à jour que dans une
+nouvelle session).
+
+### Build via GitHub Actions
+
+Le workflow `.github/workflows/release.yml` compile la version Tauri
+(`src-tauri/`) pour macOS (binaire universel), Windows et Linux, et publie
+les installeurs (`.dmg`/`.app`, `.msi`/`.exe`, `.deb`/`.AppImage`/`.rpm`)
+dans une **GitHub Release en brouillon** (draft).
+
+Pour déclencher une release :
+```bash
+git tag v1.0.0
+git push origin v1.0.0
+```
+(ou lancer le workflow manuellement depuis l'onglet Actions →
+"Run workflow").
+
+Une fois le build terminé, ouvrir la release en brouillon sur GitHub,
+vérifier les artefacts, puis la publier.
+
 ## Notes
 
 - Testé sur macOS. Le code utilise les API cross-platform d'Electron pour le tray,

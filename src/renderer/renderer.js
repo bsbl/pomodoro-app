@@ -277,14 +277,16 @@ window.pomodoroAPI.onBreakEnd((snapshot) => {
 window.pomodoroAPI.getHistory().then(renderHistory);
 window.pomodoroAPI.getSettings().then(refreshIdleTimeDisplay);
 
-if (window.pomodoroAPI.platform === 'linux') {
-  // Electron's setLoginItemSettings is not implemented on Linux: the
-  // checkbox would silently do nothing there, so point to install.sh instead.
-  autoLaunchRow.classList.add('hidden');
-  autoLaunchNote.classList.remove('hidden');
-} else {
-  window.pomodoroAPI.getAutoLaunch().then((enabled) => {
-    autoLaunchCheckbox.checked = !!enabled;
-  });
-}
+window.pomodoroAPI.getPlatform().then((platform) => {
+  if (platform === 'linux') {
+    // Electron's setLoginItemSettings is not implemented on Linux: the
+    // checkbox would silently do nothing there, so point to install.sh instead.
+    autoLaunchRow.classList.add('hidden');
+    autoLaunchNote.classList.remove('hidden');
+  } else {
+    window.pomodoroAPI.getAutoLaunch().then((enabled) => {
+      autoLaunchCheckbox.checked = !!enabled;
+    });
+  }
+});
 updateButtonsForState('idle');

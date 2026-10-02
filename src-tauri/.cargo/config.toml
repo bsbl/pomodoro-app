@@ -1,0 +1,4 @@
+[build]
+# Put build artifacts in <repo-root>/target instead of src-tauri/target, so
+# they live alongside node_modules at the project root.
+target-dir = "../target"
