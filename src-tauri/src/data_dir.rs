@@ -1,4 +1,4 @@
-// Port of src/main/data-dir.js: all app data lives in ~/.pomodoro,
+// All app data lives in ~/.pomodoro,
 // independent of Tauri's per-OS app-data directory.
 
 use serde::{de::DeserializeOwned, Serialize};

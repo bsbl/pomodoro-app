@@ -1,4 +1,4 @@
-// Port of src/main/sound.js: plays the alert sound via the OS-native
+// Plays the alert sound via the OS-native
 // player so it works regardless of window visibility/focus. Best-effort:
 // silently no-ops if the file/player is unavailable.
 

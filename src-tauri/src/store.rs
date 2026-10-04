@@ -1,4 +1,4 @@
-// Port of src/main/store.js: task history persistence.
+// Task history persistence.
 
 use crate::data_dir::{app_data_dir, read_json, write_json};
 

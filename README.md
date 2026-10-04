@@ -18,15 +18,31 @@ start.bat
 (double-clic possible dans l'explorateur de fichiers, ou depuis une invite de
 commandes / PowerShell)
 
-Ces scripts installent les dépendances npm (si nécessaire) puis démarrent
-l'application (`npm start`, qui exécute `electron .`).
+Ces scripts gèrent toute la chaîne d'outils : ils installent, ou mettent à
+jour si la version est trop ancienne, tout ce qui est nécessaire, puis
+démarrent l'application en mode développement (`npm start`, qui exécute
+`tauri dev`) :
 
-Prérequis : Node.js et npm installés (voir ci-dessous).
+- **macOS** : Xcode Command Line Tools ;
+- **Linux** : dépendances système Tauri (webkit2gtk, etc., via `apt-get` ou
+  `dnf`, sudo requis) ;
+- **Windows** : Visual Studio C++ Build Tools (via `winget`) ;
+- **Rust** ≥ `rust-version` de `src-tauri/Cargo.toml`, via
+  [rustup](https://rustup.rs/) (`rustup update` s'il est déjà présent ; sinon
+  installé dans `~/.cargo`, prioritaire sur une éventuelle installation plus
+  ancienne, par ex. via Homebrew) ;
+- **Node.js** ≥ 18 (Homebrew sur macOS, NodeSource sur Linux, `winget` sur
+  Windows) ;
+- **dépendances npm** (`npm install`).
+
+La logique est partagée avec `build.sh`/`build.bat` dans
+`scripts/ensure-toolchain.sh` et `scripts/ensure-toolchain.ps1`. Le premier
+lancement compile le code Rust et peut prendre quelques minutes.
 
 ## Installer Node.js
 
-L'application nécessite **Node.js** (qui inclut npm). Version recommandée :
-LTS (18.x ou plus récent).
+Les scripts de lancement installent Node.js automatiquement. Pour l'installer
+manuellement (version LTS, 18.x ou plus récent) :
 
 **macOS :**
 ```bash
@@ -84,19 +100,9 @@ npm --version
   dans le tray plutôt que de quitter l'app.
 - **Instance unique** : un verrou empêche de lancer une deuxième fenêtre/timer en
   parallèle (utile si l'app est déjà lancée automatiquement au login).
-- **Démarrage automatique** :
-  - **macOS** : case à cocher "Start automatically on login" dans l'interface.
-    En interne, gère un LaunchAgent launchd
-    (`~/Library/LaunchAgents/com.sebastienbel.pomodoro-timer.plist`) plutôt
-    que l'API `setLoginItemSettings` d'Electron — celle-ci s'est révélée peu
-    fiable en mode développement non empaqueté sur macOS récent (les
-    arguments de lancement custom ne sont pas toujours transmis, ce qui
-    faisait démarrer Electron sans projet chargé).
-  - **Windows** : même case à cocher, via l'API native Electron
-    `setLoginItemSettings` (Registre `Run`), qui fonctionne de façon fiable
-    ici.
-  - **Linux** (non supporté par ces mécanismes) : la case est masquée et
-    remplacée par une note renvoyant vers `install.sh` (voir plus bas).
+- **Démarrage automatique** : case à cocher "Start automatically on login"
+  dans l'interface, sur macOS (LaunchAgent), Windows (Registre `Run`) et Linux
+  (entrée XDG `~/.config/autostart`), via le plugin `tauri-plugin-autostart`.
 - **Historique des tâches** : sauvegardé dans `~/.pomodoro/history.json`.
 - **Configuration** : sauvegardée séparément dans `~/.pomodoro/config.json`
   (préférence de démarrage automatique, et durées/paramètres ci-dessous).
@@ -114,12 +120,12 @@ npm --version
 
 ```
 pomodoro-app/
-  package.json
-  start.sh
-  start.bat
+  package.json       # CLI Tauri (npm start / npm run tauri:build)
+  start.sh / start.bat
+  build.sh / build.bat
+  scripts/           # installation / mise à jour de la chaîne d'outils
+  src-tauri/         # backend Rust (fenêtre, tray, timer, commandes, autostart)
   src/
-    main/          # process principal Electron (fenêtre, tray, timer, IPC)
-    preload/        # pont sécurisé main <-> renderer
     renderer/        # interface utilisateur (HTML/CSS/JS)
   assets/
     icons/           # icônes app + tray
@@ -133,26 +139,6 @@ pomodoro-app/
   config.json    # configuration (démarrage automatique, durées des tâches/pauses)
   history.json    # historique des tâches saisies
 ```
-
-## Auto-start sur Linux (install.sh / uninstall.sh)
-
-Sur macOS et Windows, la case à cocher dans l'UI suffit (voir ci-dessus). Sur
-Linux, où l'API Electron correspondante n'est pas implémentée, ces scripts
-gèrent l'auto-start à sa place :
-
-```bash
-./install.sh     # crée l'entrée XDG autostart
-./uninstall.sh   # la retire
-```
-
-- Crée une entrée `~/.config/autostart/pomodoro-timer.desktop`, lue
-  automatiquement par la session graphique (GNOME/KDE/XFCE...) à la connexion.
-- Sur macOS/Windows, `install.sh` refuse de s'exécuter et renvoie vers la case
-  à cocher (avoir les deux mécanismes actifs en même temps lancerait l'app deux
-  fois au login). `uninstall.sh` retire aussi, en best-effort, tout LaunchAgent
-  macOS résiduel créé par une version antérieure de ce script.
-- `uninstall.sh` ne fait que retirer l'entrée auto-start ; l'application
-  elle-même n'est pas supprimée.
 
 ## Release (CI) — build Tauri multi-plateforme
 
@@ -168,16 +154,10 @@ gèrent l'auto-start à sa place :
 build.bat
 ```
 
-Ces scripts installent Rust automatiquement si `cargo` est absent
-(via rustup), installent les dépendances système Linux manquantes
-(webkit2gtk, etc., via `apt-get`), installent les dépendances npm puis
-lancent `npm run tauri:build`. Les artefacts (`.app`/`.dmg` sur macOS,
-`.deb`/`.AppImage`/`.rpm` sur Linux, `.msi`/`.exe` sur Windows) sont
-générés dans `target/release/bundle/`.
-
-Sur Windows, si Rust vient d'être installé, relance `build.bat` dans une
-nouvelle invite de commandes (le PATH n'est mis à jour que dans une
-nouvelle session).
+Comme les scripts de lancement, ils installent ou mettent à jour toute la
+chaîne d'outils (voir plus haut), puis lancent `npm run tauri:build`. Les
+artefacts (`.app`/`.dmg` sur macOS, `.deb`/`.AppImage`/`.rpm` sur Linux,
+`.msi`/`.exe` sur Windows) sont générés dans `target/release/bundle/`.
 
 ### Build via GitHub Actions
 
@@ -199,8 +179,7 @@ vérifier les artefacts, puis la publier.
 
 ## Notes
 
-- Testé sur macOS. Le code utilise les API cross-platform d'Electron pour le tray,
-  les notifications et l'autostart ; une validation manuelle reste recommandée sur
-  Windows et Linux.
+- Testé sur macOS. Une validation manuelle reste recommandée sur Windows et
+  Linux.
 - Le délai de 30 secondes avant le déclenchement automatique de la pause est
-  configurable dans `src/main/timer.js` (`ALERT_TIMEOUT_SECONDS`).
+  configurable dans `src-tauri/src/timer.rs` (`ALERT_TIMEOUT_SECONDS`).

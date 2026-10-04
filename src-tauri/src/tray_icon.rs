@@ -1,7 +1,5 @@
-// Port of src/main/tray-icon.js + src/renderer/tray-icon.html: renders the
-// tomato tray icon with an optional progress ring (depletes clockwise as
-// the session's remaining time decreases), using tiny-skia instead of a
-// hidden BrowserWindow + <canvas>.
+// Renders the tomato tray icon with an optional progress ring (depletes clockwise as
+// the session's remaining time decreases), using tiny-skia.
 
 use image::GenericImageView;
 use std::sync::OnceLock;

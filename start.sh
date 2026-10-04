@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Simple launcher: installs dependencies (if needed) and starts the app.
+# Dev launcher: installs/upgrades the whole toolchain if needed (see
+# scripts/ensure-toolchain.sh), then starts the app in dev mode (tauri dev).
 set -e
 cd "$(dirname "$0")"
-npm install
+source scripts/ensure-toolchain.sh
 npm start

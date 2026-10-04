@@ -1,6 +1,5 @@
 // Builds/rebuilds the tray context menu. Separate module because Tauri
-// menus are immutable once built (unlike Electron's Menu.buildFromTemplate
-// which can be re-applied freely) — rebuild_tray_menu constructs a fresh
+// menus are immutable once built — rebuild_tray_menu constructs a fresh
 // Menu every time the status label needs to change and calls
 // tray.set_menu(...).
 

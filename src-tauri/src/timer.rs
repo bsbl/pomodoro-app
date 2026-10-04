@@ -1,4 +1,4 @@
-// Port of src/main/timer.js: Pomodoro state machine.
+// Pomodoro state machine.
 // States: Idle -> Running -> (Paused <-> Running) -> Alerting -> Break -> Idle
 //
 // The JS version used an EventEmitter (emits 'update'/'alert'/'break-start'/

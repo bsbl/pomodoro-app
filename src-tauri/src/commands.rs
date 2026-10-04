@@ -1,5 +1,4 @@
-// Tauri commands invoked from the frontend via `invoke(...)`. Mirrors the
-// ipcMain.on/handle wiring in src/main/main.js.
+// Tauri commands invoked from the frontend via `invoke(...)`.
 
 use crate::app_state::AppState;
 use crate::config;

@@ -1,10 +1,8 @@
 'use strict';
 
-// Tauri equivalent of src/preload/preload.js: rebuilds window.pomodoroAPI on
-// top of window.__TAURI__ (enabled via tauri.conf.json's withGlobalTauri)
-// so that renderer.js itself requires no changes beyond the async
-// getPlatform() call (Tauri commands are always invoked asynchronously,
-// unlike the old preload's synchronous `platform` property).
+// Builds window.pomodoroAPI on top of window.__TAURI__ (enabled via
+// tauri.conf.json's withGlobalTauri). Tauri commands are always invoked
+// asynchronously, so every method returns a Promise.
 (() => {
   const { invoke } = window.__TAURI__.core;
   const { listen } = window.__TAURI__.event;

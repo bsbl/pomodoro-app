@@ -1,4 +1,4 @@
-// Port of src/main/config.js.
+// Persistent app configuration (~/.pomodoro/config.json).
 
 use crate::data_dir::{app_data_dir, read_json, write_json};
 use serde::{Deserialize, Serialize};

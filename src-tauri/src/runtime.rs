@@ -1,8 +1,7 @@
 // Shared helpers used both by command handlers (commands.rs) and the
 // background tick/one-shot tasks (lib.rs): emitting frontend events,
 // refreshing the tray icon/menu/tooltip, and playing the alert sound +
-// native notification. Mirrors wireTimerEvents()/updateTrayMenu()/
-// updateTrayIcon() in src/main/main.js.
+// native notification.
 
 use crate::app_state::AppState;
 use crate::timer::{Event, Settings, Snapshot};
@@ -46,8 +45,7 @@ pub fn play_alert_sound() {
 }
 
 /// Shows the main window, focuses it, and requests user attention
-/// (dock bounce / taskbar flash) — equivalent to Electron's
-/// `mainWindow.show()/.focus()/.flashFrame(true)`.
+/// (dock bounce / taskbar flash).
 pub fn show_and_attract_window(app: &AppHandle) {
     if let Some(window) = app.get_webview_window("main") {
         let _ = window.show();
