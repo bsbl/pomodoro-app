@@ -94,7 +94,8 @@ npm --version
   - **Snooze (+1 min)** : rejoue l'alerte 1 minute plus tard.
   - **Stop (start break)** : démarre la pause immédiatement.
   - Si aucun clic sous 30 secondes, la pause démarre automatiquement.
-- **Pauses automatiques** : 5 minutes, ou 15 minutes toutes les 4 sessions complétées.
+- **Pauses automatiques** : 5 minutes, ou 15 minutes toutes les 4 sessions complétées
+  (cycle remis à zéro après une interruption d'1 heure, configurable).
 - **Tray / menu bar** : icône avec statut courant (tâche + temps restant), et menu
   pour afficher la fenêtre ou quitter l'application. Fermer la fenêtre la masque
   dans le tray plutôt que de quitter l'app.
@@ -112,6 +113,10 @@ npm --version
   - la durée d'une pause courte (5' par défaut),
   - la durée d'une pause longue (15' par défaut),
   - le nombre de tâches avant une pause longue (4 par défaut).
+  - la durée d'inactivité (60' par défaut) au-delà de laquelle le cycle repart
+    de zéro : après une interruption au moins aussi longue entre deux tâches
+    (Stop ou fin de pause, puis Start task), les pauses recommencent par des
+    pauses courtes de 5'. Le temps où l'ordinateur est en veille compte.
 
   Les changements ne s'appliquent qu'à la **prochaine** tâche/pause démarrée —
   ils n'affectent pas un décompte déjà en cours.

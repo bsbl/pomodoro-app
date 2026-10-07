@@ -101,6 +101,8 @@ pub struct SettingsPayload {
     long_break_minutes: u32,
     #[serde(rename = "sessionsBeforeLongBreak")]
     sessions_before_long_break: u32,
+    #[serde(rename = "cycleResetMinutes")]
+    cycle_reset_minutes: u32,
 }
 
 #[tauri::command]
@@ -111,6 +113,7 @@ pub fn get_settings() -> SettingsPayload {
         short_break_minutes: c.short_break_minutes,
         long_break_minutes: c.long_break_minutes,
         sessions_before_long_break: c.sessions_before_long_break,
+        cycle_reset_minutes: c.cycle_reset_minutes,
     }
 }
 
@@ -124,6 +127,8 @@ pub struct SettingsInput {
     long_break_minutes: i64,
     #[serde(rename = "sessionsBeforeLongBreak")]
     sessions_before_long_break: i64,
+    #[serde(rename = "cycleResetMinutes")]
+    cycle_reset_minutes: i64,
 }
 
 #[derive(serde::Serialize)]
@@ -132,15 +137,17 @@ pub struct SetSettingsResult {
     error: Option<String>,
 }
 
-// Whole numbers only, within sane bounds (1-180 minutes, 1-20 sessions) —
+// Whole numbers only, within sane bounds (1-180 minutes, 1-20 sessions,
+// 1-1440 minutes for the cycle reset) —
 // matches the <input type="number" min max step="1"> constraints in the
 // settings UI, re-checked here since IPC input can't be trusted as-is.
-fn sanitize_settings(raw: &SettingsInput) -> Option<(u32, u32, u32, u32)> {
+fn sanitize_settings(raw: &SettingsInput) -> Option<(u32, u32, u32, u32, u32)> {
     let is_valid = |n: i64, max: i64| n >= 1 && n <= max;
     if !is_valid(raw.work_minutes, 180)
         || !is_valid(raw.short_break_minutes, 180)
         || !is_valid(raw.long_break_minutes, 180)
         || !is_valid(raw.sessions_before_long_break, 20)
+        || !is_valid(raw.cycle_reset_minutes, 1440)
     {
         return None;
     }
@@ -149,13 +156,19 @@ fn sanitize_settings(raw: &SettingsInput) -> Option<(u32, u32, u32, u32)> {
         raw.short_break_minutes as u32,
         raw.long_break_minutes as u32,
         raw.sessions_before_long_break as u32,
+        raw.cycle_reset_minutes as u32,
     ))
 }
 
 #[tauri::command]
 pub fn set_settings(state: State<'_, AppState>, settings: SettingsInput) -> SetSettingsResult {
-    let Some((work_minutes, short_break_minutes, long_break_minutes, sessions_before_long_break)) =
-        sanitize_settings(&settings)
+    let Some((
+        work_minutes,
+        short_break_minutes,
+        long_break_minutes,
+        sessions_before_long_break,
+        cycle_reset_minutes,
+    )) = sanitize_settings(&settings)
     else {
         return SetSettingsResult {
             ok: false,
@@ -168,6 +181,7 @@ pub fn set_settings(state: State<'_, AppState>, settings: SettingsInput) -> SetS
     c.short_break_minutes = short_break_minutes;
     c.long_break_minutes = long_break_minutes;
     c.sessions_before_long_break = sessions_before_long_break;
+    c.cycle_reset_minutes = cycle_reset_minutes;
     config::save_config(&c);
 
     crate::apply_settings_to_timer(state.inner(), &c);

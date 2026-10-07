@@ -9,31 +9,57 @@ const SIZE: u32 = 128;
 const CENTER: f32 = SIZE as f32 / 2.0;
 const RING_RADIUS: f32 = 56.0;
 const RING_WIDTH: f32 = 12.0;
-const TOMATO_SIZE: u32 = 84; // leaves room for the ring around it
+// Box the tomato is fitted into: the whole icon when there's no ring,
+// just inside the ring's inner edge otherwise.
+const TOMATO_SIZE_FULL: u32 = SIZE - 4;
+const TOMATO_SIZE_IN_RING: u32 = (2.0 * (RING_RADIUS - RING_WIDTH / 2.0)) as u32 - 4;
 
-static TOMATO: OnceLock<Pixmap> = OnceLock::new();
+static TOMATO_FULL: OnceLock<Pixmap> = OnceLock::new();
+static TOMATO_IN_RING: OnceLock<Pixmap> = OnceLock::new();
 
-fn tomato_pixmap(tomato_png_bytes: &[u8]) -> &'static Pixmap {
-    TOMATO.get_or_init(|| {
-        let img = image::load_from_memory(tomato_png_bytes)
-            .expect("bundled tray tomato icon must be a valid PNG")
-            .resize_exact(TOMATO_SIZE, TOMATO_SIZE, image::imageops::FilterType::Lanczos3);
-        let mut pixmap = Pixmap::new(TOMATO_SIZE, TOMATO_SIZE).unwrap();
-        for (x, y, pixel) in img.pixels() {
-            let [r, g, b, a] = pixel.0;
-            // tiny-skia stores premultiplied alpha internally.
-            let af = a as f32 / 255.0;
-            let idx = (y * TOMATO_SIZE + x) as usize;
-            pixmap.pixels_mut()[idx] = tiny_skia::PremultipliedColorU8::from_rgba(
-                (r as f32 * af).round() as u8,
-                (g as f32 * af).round() as u8,
-                (b as f32 * af).round() as u8,
-                a,
-            )
-            .unwrap();
+/// Decodes the tomato PNG, crops away its transparent padding, and scales
+/// it (keeping its aspect ratio) to fit a `box_size` square.
+fn load_tomato(tomato_png_bytes: &[u8], box_size: u32) -> Pixmap {
+    let mut img = image::load_from_memory(tomato_png_bytes)
+        .expect("bundled tray tomato icon must be a valid PNG")
+        .to_rgba8();
+
+    let (mut min_x, mut min_y, mut max_x, mut max_y) = (img.width(), img.height(), 0, 0);
+    for (x, y, pixel) in img.enumerate_pixels() {
+        if pixel.0[3] > 8 {
+            min_x = min_x.min(x);
+            min_y = min_y.min(y);
+            max_x = max_x.max(x);
+            max_y = max_y.max(y);
         }
-        pixmap
-    })
+    }
+    let img = if min_x <= max_x && min_y <= max_y {
+        image::imageops::crop(&mut img, min_x, min_y, max_x - min_x + 1, max_y - min_y + 1).to_image()
+    } else {
+        img
+    };
+
+    let img = image::DynamicImage::ImageRgba8(img).resize(
+        box_size,
+        box_size,
+        image::imageops::FilterType::Lanczos3,
+    );
+    let (width, height) = img.dimensions();
+    let mut pixmap = Pixmap::new(width, height).unwrap();
+    for (x, y, pixel) in img.pixels() {
+        let [r, g, b, a] = pixel.0;
+        // tiny-skia stores premultiplied alpha internally.
+        let af = a as f32 / 255.0;
+        let idx = (y * width + x) as usize;
+        pixmap.pixels_mut()[idx] = tiny_skia::PremultipliedColorU8::from_rgba(
+            (r as f32 * af).round() as u8,
+            (g as f32 * af).round() as u8,
+            (b as f32 * af).round() as u8,
+            a,
+        )
+        .unwrap();
+    }
+    pixmap
 }
 
 fn arc_path(cx: f32, cy: f32, radius: f32, start_angle: f32, end_angle: f32) -> tiny_skia::Path {
@@ -89,11 +115,14 @@ pub fn render_tray_icon(
         }
     }
 
-    let tomato = tomato_pixmap(tomato_png_bytes);
-    let offset = ((SIZE - TOMATO_SIZE) / 2) as i32;
+    let tomato = if show_ring {
+        TOMATO_IN_RING.get_or_init(|| load_tomato(tomato_png_bytes, TOMATO_SIZE_IN_RING))
+    } else {
+        TOMATO_FULL.get_or_init(|| load_tomato(tomato_png_bytes, TOMATO_SIZE_FULL))
+    };
     pixmap.draw_pixmap(
-        offset,
-        offset,
+        ((SIZE - tomato.width()) / 2) as i32,
+        ((SIZE - tomato.height()) / 2) as i32,
         tomato.as_ref(),
         &tiny_skia::PixmapPaint::default(),
         Transform::identity(),

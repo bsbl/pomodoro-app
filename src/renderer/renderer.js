@@ -34,6 +34,7 @@ const inputWorkMinutes = document.getElementById('setting-work-minutes');
 const inputShortBreakMinutes = document.getElementById('setting-short-break-minutes');
 const inputLongBreakMinutes = document.getElementById('setting-long-break-minutes');
 const inputSessionsBeforeLongBreak = document.getElementById('setting-sessions-before-long-break');
+const inputCycleResetMinutes = document.getElementById('setting-cycle-reset-minutes');
 const btnSettingsSave = document.getElementById('btn-settings-save');
 const btnSettingsCancel = document.getElementById('btn-settings-cancel');
 
@@ -165,6 +166,7 @@ function showSettingsOverlay() {
     inputShortBreakMinutes.value = settings.shortBreakMinutes;
     inputLongBreakMinutes.value = settings.longBreakMinutes;
     inputSessionsBeforeLongBreak.value = settings.sessionsBeforeLongBreak;
+    inputCycleResetMinutes.value = settings.cycleResetMinutes;
     settingsOverlay.classList.remove('hidden');
   });
 }
@@ -228,15 +230,17 @@ btnSettingsSave.addEventListener('click', () => {
     shortBreakMinutes: parseInt(inputShortBreakMinutes.value, 10),
     longBreakMinutes: parseInt(inputLongBreakMinutes.value, 10),
     sessionsBeforeLongBreak: parseInt(inputSessionsBeforeLongBreak.value, 10),
+    cycleResetMinutes: parseInt(inputCycleResetMinutes.value, 10),
   };
   const isValid = (n, max) => Number.isInteger(n) && n >= 1 && n <= max;
   if (
     !isValid(settings.workMinutes, 180) ||
     !isValid(settings.shortBreakMinutes, 180) ||
     !isValid(settings.longBreakMinutes, 180) ||
-    !isValid(settings.sessionsBeforeLongBreak, 20)
+    !isValid(settings.sessionsBeforeLongBreak, 20) ||
+    !isValid(settings.cycleResetMinutes, 1440)
   ) {
-    settingsError.textContent = 'Please enter whole numbers: 1-180 minutes, 1-20 tasks.';
+    settingsError.textContent = 'Please enter whole numbers: 1-180 minutes, 1-20 tasks, 1-1440 idle minutes.';
     settingsError.classList.remove('hidden');
     return;
   }

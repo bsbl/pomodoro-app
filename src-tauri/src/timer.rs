@@ -14,6 +14,7 @@
 //     mirrors clearTimeout() semantics without needing cancellable handles.
 
 use serde::Serialize;
+use std::time::{Duration, SystemTime};
 
 pub const ALERT_TIMEOUT_SECONDS: u64 = 30;
 pub const POST_STOP_TIMEOUT_SECONDS: u64 = 30;
@@ -77,6 +78,8 @@ pub struct Settings {
     pub long_break_seconds: i64,
     #[serde(rename = "sessionsBeforeLongBreak")]
     pub sessions_before_long_break: u32,
+    #[serde(rename = "cycleResetSeconds")]
+    pub cycle_reset_seconds: i64,
 }
 
 /// Frontend/tray event to emit, in the same spirit as timer.js's
@@ -101,6 +104,12 @@ pub struct Timer {
     pub short_break_seconds: i64,
     pub long_break_seconds: i64,
     pub sessions_before_long_break: u32,
+    // Idle for at least this long between tasks restarts the short/long
+    // break cycle (completed_sessions back to 0).
+    pub cycle_reset_seconds: i64,
+    // When the timer last went Idle (stop or end of break). Wall-clock
+    // time, so that time spent with the computer asleep counts too.
+    idle_since: Option<SystemTime>,
 
     // Generation tokens guarding the one-shot alert/post-stop timeouts.
     // A background task scheduled with a given token only acts if the
@@ -122,6 +131,8 @@ impl Timer {
             short_break_seconds: 5 * 60,
             long_break_seconds: 15 * 60,
             sessions_before_long_break: 4,
+            cycle_reset_seconds: 60 * 60,
+            idle_since: None,
             alert_token: None,
             post_stop_token: None,
             next_token: 1,
@@ -140,6 +151,7 @@ impl Timer {
         short_break_seconds: Option<i64>,
         long_break_seconds: Option<i64>,
         sessions_before_long_break: Option<u32>,
+        cycle_reset_seconds: Option<i64>,
     ) {
         if let Some(v) = work_seconds {
             if v > 0 {
@@ -161,6 +173,11 @@ impl Timer {
                 self.sessions_before_long_break = v;
             }
         }
+        if let Some(v) = cycle_reset_seconds {
+            if v > 0 {
+                self.cycle_reset_seconds = v;
+            }
+        }
     }
 
     pub fn get_settings(&self) -> Settings {
@@ -169,6 +186,7 @@ impl Timer {
             short_break_seconds: self.short_break_seconds,
             long_break_seconds: self.long_break_seconds,
             sessions_before_long_break: self.sessions_before_long_break,
+            cycle_reset_seconds: self.cycle_reset_seconds,
         }
     }
 
@@ -183,7 +201,18 @@ impl Timer {
     }
 
     pub fn start_task(&mut self, label: String) -> Vec<Event> {
+        self.start_task_at(label, SystemTime::now())
+    }
+
+    fn start_task_at(&mut self, label: String, now: SystemTime) -> Vec<Event> {
         self.post_stop_token = None; // cancel any pending post-stop auto-break
+        if let Some(idle_since) = self.idle_since.take() {
+            // A clock moved backwards yields Err: treat it as no idle time.
+            let idle = now.duration_since(idle_since).unwrap_or(Duration::ZERO);
+            if idle >= Duration::from_secs(self.cycle_reset_seconds as u64) {
+                self.completed_sessions = 0;
+            }
+        }
         self.task_label = Some(label);
         self.state = State::Running;
         self.remaining = self.work_seconds;
@@ -196,6 +225,7 @@ impl Timer {
     /// schedule a `POST_STOP_TIMEOUT_SECONDS` sleep for.
     pub fn stop_task(&mut self) -> (Vec<Event>, u64) {
         self.state = State::Idle;
+        self.idle_since = Some(SystemTime::now());
         self.task_label = None;
         self.remaining = 0;
         self.break_type = None;
@@ -262,6 +292,7 @@ impl Timer {
 
     fn start_break(&mut self) -> Vec<Event> {
         self.alert_token = None;
+        self.idle_since = None;
         // completed_sessions > 0 guards against a long break being wrongly
         // triggered by manual_break() on a very first Stop (0 % N == 0),
         // with no effect on the natural flow (completed_sessions is always
@@ -276,6 +307,7 @@ impl Timer {
 
     fn end_break(&mut self) -> Vec<Event> {
         self.state = State::Idle;
+        self.idle_since = Some(SystemTime::now());
         self.break_type = None;
         self.task_label = None;
         self.remaining = 0;
@@ -305,5 +337,47 @@ impl Timer {
             State::Break => Some((self.end_break(), None)),
             _ => None,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn timer_after_one_session() -> Timer {
+        let mut t = Timer::new();
+        t.start_task("a".into());
+        t.remaining = 0;
+        t.tick(); // -> Alerting, completed_sessions = 1
+        t.stop_alert(); // -> Break
+        t.remaining = 0;
+        t.tick(); // -> Idle
+        assert_eq!(t.completed_sessions, 1);
+        t
+    }
+
+    #[test]
+    fn short_idle_keeps_cycle() {
+        let mut t = timer_after_one_session();
+        let now = t.idle_since.unwrap() + Duration::from_secs(59 * 60);
+        t.start_task_at("b".into(), now);
+        assert_eq!(t.completed_sessions, 1);
+    }
+
+    #[test]
+    fn long_idle_resets_cycle() {
+        let mut t = timer_after_one_session();
+        let now = t.idle_since.unwrap() + Duration::from_secs(60 * 60);
+        t.start_task_at("b".into(), now);
+        assert_eq!(t.completed_sessions, 0);
+    }
+
+    #[test]
+    fn reset_threshold_is_configurable() {
+        let mut t = timer_after_one_session();
+        t.configure(None, None, None, None, Some(10 * 60));
+        let now = t.idle_since.unwrap() + Duration::from_secs(10 * 60);
+        t.start_task_at("b".into(), now);
+        assert_eq!(t.completed_sessions, 0);
     }
 }

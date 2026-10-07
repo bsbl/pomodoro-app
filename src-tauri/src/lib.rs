@@ -24,6 +24,7 @@ pub fn apply_settings_to_timer(state: &AppState, c: &config::Config) {
         Some(c.short_break_minutes as i64 * 60),
         Some(c.long_break_minutes as i64 * 60),
         Some(c.sessions_before_long_break),
+        Some(c.cycle_reset_minutes as i64 * 60),
     );
 }
 
