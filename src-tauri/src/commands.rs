@@ -76,6 +76,21 @@ pub fn get_history() -> Vec<String> {
 }
 
 #[tauri::command]
+pub fn get_todos() -> Vec<String> {
+    store::load_todos()
+}
+
+#[tauri::command]
+pub fn add_todo(label: String) -> Vec<String> {
+    store::add_todo(&label)
+}
+
+#[tauri::command]
+pub fn remove_todo(label: String) -> Vec<String> {
+    store::remove_todo(&label)
+}
+
+#[tauri::command]
 pub fn get_auto_launch() -> bool {
     config::load_config().auto_launch
 }

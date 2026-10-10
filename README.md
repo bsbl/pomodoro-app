@@ -82,6 +82,12 @@ npm --version
 
 - **Start task** : démarre une session de 25 minutes pour la tâche saisie (avec
   historique des tâches précédentes en autocomplétion/liste cliquable).
+- **To do** : le bouton **+ To do** ajoute le texte saisi à une liste de
+  tâches à faire, affichée au-dessus de l'historique, sans démarrer de
+  session. Pour chaque tâche : clic sur le libellé pour le reprendre dans le
+  champ, **▶** pour la démarrer, **✓** pour la retirer de la liste. Une tâche
+  démarrée reste dans la liste (elle peut demander plusieurs pomodoros)
+  jusqu'à ce qu'elle soit cochée.
 - **Stop task** : interrompt la tâche en cours. Une proposition s'affiche
   ensuite : **Take a break** (démarre une pause, courte ou longue selon le
   cycle en cours), **Start new task** (place le focus sur le champ de saisie)
@@ -105,6 +111,7 @@ npm --version
   dans l'interface, sur macOS (LaunchAgent), Windows (Registre `Run`) et Linux
   (entrée XDG `~/.config/autostart`), via le plugin `tauri-plugin-autostart`.
 - **Historique des tâches** : sauvegardé dans `~/.pomodoro/history.json`.
+- **Liste To do** : sauvegardée dans `~/.pomodoro/todo.json`.
 - **Configuration** : sauvegardée séparément dans `~/.pomodoro/config.json`
   (préférence de démarrage automatique, et durées/paramètres ci-dessous).
 - **Paramètres (durées)** : accessibles via le bouton **⚙** dans la fenêtre, ou
@@ -143,6 +150,7 @@ pomodoro-app/
 ~/.pomodoro/
   config.json    # configuration (démarrage automatique, durées des tâches/pauses)
   history.json    # historique des tâches saisies
+  todo.json       # liste des tâches à faire
 ```
 
 ## Release (CI) — build Tauri multi-plateforme

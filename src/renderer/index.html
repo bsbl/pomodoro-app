@@ -18,6 +18,7 @@
     <div class="task-row">
       <input type="text" id="task-input" list="task-history" placeholder="What are you working on?" />
       <datalist id="task-history"></datalist>
+      <button id="btn-add-todo" title="Add to the to-do list without starting it">+ To do</button>
     </div>
 
     <div class="button-grid">
@@ -31,6 +32,11 @@
       <input type="checkbox" id="autolaunch-checkbox" />
       Start automatically on login
     </label>
+
+    <div class="history-section" id="todo-section">
+      <h2>To do</h2>
+      <ul id="todo-list"></ul>
+    </div>
 
     <div class="history-section">
       <h2>Task history</h2>

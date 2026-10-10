@@ -8,6 +8,9 @@ const stateLabel = document.getElementById('state-label');
 const taskInput = document.getElementById('task-input');
 const taskHistoryDatalist = document.getElementById('task-history');
 const historyList = document.getElementById('history-list');
+const todoSection = document.getElementById('todo-section');
+const todoList = document.getElementById('todo-list');
+const btnAddTodo = document.getElementById('btn-add-todo');
 const autoLaunchCheckbox = document.getElementById('autolaunch-checkbox');
 
 const btnStart = document.getElementById('btn-start');
@@ -66,12 +69,54 @@ function renderHistory(history) {
   });
 }
 
+function renderTodos(todos) {
+  todoList.innerHTML = '';
+  todoSection.classList.toggle('hidden', todos.length === 0);
+  todos.forEach((label) => {
+    const li = document.createElement('li');
+
+    const text = document.createElement('span');
+    text.className = 'todo-label';
+    text.textContent = label;
+    text.addEventListener('click', () => {
+      taskInput.value = label;
+    });
+
+    const btnStartTodo = document.createElement('button');
+    btnStartTodo.className = 'todo-action todo-start';
+    btnStartTodo.textContent = '▶';
+    btnStartTodo.title = 'Start this task';
+    btnStartTodo.disabled = btnStart.disabled;
+    btnStartTodo.addEventListener('click', () => startTask(label));
+
+    const btnDone = document.createElement('button');
+    btnDone.className = 'todo-action';
+    btnDone.textContent = '✓';
+    btnDone.title = 'Done — remove from the to-do list';
+    btnDone.addEventListener('click', () => {
+      window.pomodoroAPI.removeTodo(label).then(renderTodos);
+    });
+
+    li.append(text, btnStartTodo, btnDone);
+    todoList.appendChild(li);
+  });
+}
+
+function startTask(label) {
+  taskInput.value = label;
+  window.pomodoroAPI.startTask(label);
+  window.pomodoroAPI.getHistory().then(renderHistory);
+}
+
 function updateButtonsForState(state) {
   btnStart.disabled = state === 'running' || state === 'paused' || state === 'alerting' || state === 'break';
   btnStop.disabled = state === 'idle' || state === 'break';
   btnReset.disabled = state !== 'running' && state !== 'paused';
   btnPauseResume.disabled = state !== 'running' && state !== 'paused';
   btnPauseResume.textContent = state === 'paused' ? 'Resume current' : 'Pause current';
+  todoList.querySelectorAll('.todo-start').forEach((btn) => {
+    btn.disabled = btnStart.disabled;
+  });
 }
 
 function applySnapshot(snapshot) {
@@ -177,9 +222,16 @@ function hideSettingsOverlay() {
 
 // Wire up buttons
 btnStart.addEventListener('click', () => {
-  const label = taskInput.value.trim() || 'Untitled task';
-  window.pomodoroAPI.startTask(label);
-  window.pomodoroAPI.getHistory().then(renderHistory);
+  startTask(taskInput.value.trim() || 'Untitled task');
+});
+btnAddTodo.addEventListener('click', () => {
+  const label = taskInput.value.trim();
+  if (!label) {
+    taskInput.focus();
+    return;
+  }
+  window.pomodoroAPI.addTodo(label).then(renderTodos);
+  taskInput.value = '';
 });
 btnStop.addEventListener('click', () => {
   window.pomodoroAPI.stopTask();
@@ -276,6 +328,7 @@ window.pomodoroAPI.onBreakEnd((snapshot) => {
 });
 
 // Initial load
+window.pomodoroAPI.getTodos().then(renderTodos);
 window.pomodoroAPI.getHistory().then(renderHistory);
 window.pomodoroAPI.getSettings().then(refreshIdleTimeDisplay);
 

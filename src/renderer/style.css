@@ -57,8 +57,14 @@ h1 {
   letter-spacing: 1px;
 }
 
+.task-row {
+  display: flex;
+  gap: 8px;
+}
+
 .task-row input {
-  width: 100%;
+  flex: 1;
+  min-width: 0;
   padding: 8px 10px;
   border-radius: 6px;
   border: 1px solid #444;
@@ -131,6 +137,41 @@ button:disabled {
 
 #history-list li:hover {
   color: #8ecdb7;
+}
+
+#todo-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 130px;
+  overflow-y: auto;
+  font-size: 13px;
+}
+
+#todo-list li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 0;
+  border-bottom: 1px solid #333347;
+}
+
+.todo-label {
+  flex: 1;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.todo-label:hover {
+  color: #8ecdb7;
+}
+
+.todo-action {
+  padding: 2px 8px;
+  background: transparent;
+  font-size: 12px;
 }
 
 .overlay {

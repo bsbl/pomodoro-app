@@ -1,4 +1,4 @@
-// Task history persistence.
+// Task history and to-do list persistence.
 
 use crate::data_dir::{app_data_dir, read_json, write_json};
 
@@ -27,4 +27,34 @@ pub fn add_task(label: &str) -> Vec<String> {
     history.truncate(MAX_HISTORY);
     save_history(&history);
     history
+}
+
+fn todo_path() -> std::path::PathBuf {
+    app_data_dir().join("todo.json")
+}
+
+pub fn load_todos() -> Vec<String> {
+    read_json(&todo_path(), Vec::new())
+}
+
+fn save_todos(todos: &Vec<String>) {
+    write_json(&todo_path(), todos);
+}
+
+/// Appends a task to the to-do list (in insertion order, deduplicated).
+pub fn add_todo(label: &str) -> Vec<String> {
+    let trimmed = label.trim();
+    let mut todos = load_todos();
+    if trimmed.is_empty() || todos.iter().any(|t| t == trimmed) {
+        return todos;
+    }
+    todos.push(trimmed.to_string());
+    save_todos(&todos);
+    todos
+}
+
+pub fn remove_todo(label: &str) -> Vec<String> {
+    let todos: Vec<String> = load_todos().into_iter().filter(|t| t != label).collect();
+    save_todos(&todos);
+    todos
 }
